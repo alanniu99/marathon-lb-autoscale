@@ -282,7 +282,8 @@ class Autoscale
 
     instances = {}
     apps['apps'].each do |app|
-      id = app['id'][1..-1].gsub '/', '_' # trim leading '/'  # gsub add support for folders
+      //id = app['id'][1..-1].gsub '/', '_' # trim leading '/'  # gsub add support for folders
+      id = app['id'][1..-1]
       instances[id] = app['instances']
     end
     # Find our app backends

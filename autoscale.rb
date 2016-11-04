@@ -151,11 +151,11 @@ class Autoscale
   	jsonPW = { "uid": "#@options.marathonCredentials[0]" , "password": "#@options.marathonCredentials[1]" } 	
   	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
     req.body = jsonPW.to_json
-    res = Net::HTTP.new(@options.auth_login.host,@options.auth_login.port).start do |http|
-     http.use_ssl = true
-     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-     http.request(req)
-     end
+    http = Net::HTTP.new(@options.auth_login.host,@options.auth_login.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE   
+    res = http.request(req)
+     
     @token_mara = JSON.parse(res.body)['token']                                                       
   	
    end
@@ -296,12 +296,12 @@ class Autoscale
      req['Authorization'] = 'token=#{@token_mara}' 
     end
 
-    res = Net::HTTP.start(@options.marathon.host,
-                          @options.marathon.port) {|http|
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE                   	
-      http.request(req)
-    }
+    http = Net::HTTP.new(@options.marathon.host,@options.marathon.port) 
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE                   	
+    res = http.request(req)
+    
+   
     apps = JSON.parse(res.body)
 
     instances = {}
@@ -385,8 +385,7 @@ class Autoscale
       req.content_type = 'application/json'
       req.body = JSON.generate({'instances'=>instances})
 
-      Net::HTTP.new(@options.marathon.host,
-                    @options.marathon.port).start do |http|
+        http = Net::HTTP.new(@options.marathon.host,@options.marathon.port)
         http.use_ssl = true
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         http.request(req)

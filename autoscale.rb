@@ -166,6 +166,7 @@ class Autoscale
   def run
     @log.info('Starting autoscale controller')
     @log.info("Options: #{@options.to_s}")
+    @log.info("token: #{@token_mara}")
     @samples = 0
 
     @apps = {}
@@ -293,6 +294,7 @@ class Autoscale
   end
 
   def update_current_marathon_instances
+  	@log.info("update current marathon instances")
     req = Net::HTTP::Get.new('/v2/apps')
     if !@options.marathonCredentials.empty?
       req['authorization'] = "Token token=#{@token_mara}"  
@@ -303,7 +305,7 @@ class Autoscale
       http.request(req)
     }
     apps = JSON.parse(res.body)
-
+   
     instances = {}
     apps['apps'].each do |app|
       id = app['id'][1..-1].gsub '/', '_' # trim leading '/'  # gsub add support for folders
@@ -375,6 +377,7 @@ class Autoscale
   end
 
  def scale_apps(scale_list)
+ 	@log.info("scale apps")
     scale_list.each do |app,instances|
       req = Net::HTTP::Put.new('/v2/apps/' + app)
       if !@options.marathonCredentials.empty?

@@ -155,8 +155,9 @@ class Autoscale
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE   
     res = http.request(req)
-     
-    @token_mara = JSON.parse(res.body)['token']                                                       
+    @log.info(res)
+    #@token_mara = JSON.parse(res.body)['token']  
+    @token_mara = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1aWQiOiJhZG1pbiIsImV4cCI6MTQ3ODY4NDQwOH0.VBi266oFwFBbUVghrrkwYxrYCEmVzNNtgYb9YrVDjHaZjyGwLOPA7ZUaQ6iTqnJFpLZy8MH6KN1ZmkZJSLBaCh2RI5fnJmELMQoDfroEEyII-Oujl4BLVybBJXm3K_hI2nblwm8RibwB7FawtSCxXAM-ClwJJAm_DG0TqCeSscmzo1f9IXoWht8e5yo_UawCQsV1_JIyooVMu8cx7lsR8IkFXhrLpTJ_XATZV-PV86hUXnxhuhLJs7lePZfLnX6evoPngOtwtPTGQfatLp6FIahCT55IdQ52Ur8s857ERUdaun2CEnh6S54wz7sc9P7tOwX9KBFCWygK1fnZnppOvg"                                                     
   	
    end
  

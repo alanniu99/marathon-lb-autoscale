@@ -109,7 +109,7 @@ class Optparser
         options.min_instances = value
       end
      
-     opts.on("--auth-login", URI,"DCOS auth login access API url") do |value|
+     opts.on("--auth-login URL", URI,"DCOS auth login access API url") do |value|
         options.auth_login = value
      end
      

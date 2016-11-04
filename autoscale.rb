@@ -389,7 +389,7 @@ class Autoscale
         http.use_ssl = true
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         http.request(req)
-      end
+     
     end
   end
  

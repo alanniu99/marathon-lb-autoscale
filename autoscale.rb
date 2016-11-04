@@ -130,6 +130,15 @@ end
 
 
 class Autoscale
+   def get_token
+  	@log.info("Get marathon login auth token")  	
+  	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
+    req.body = {"uid":@options.marathonCredentials[0],"password":@options.marathonCredentials[0]}
+    res = Net::HTTP.new(@options.auth_login,@options.auth_login).start{|http| http.request(req)}  
+    JSON.parse(res.body)['token']                                                       
+  	
+   end
+  
   def initialize(options)
     @options = options
     @token_mara = get_token
@@ -143,15 +152,6 @@ class Autoscale
         "[#{date_format}] #{msg}\n"
       end
     end
-  end
- 
-  def get_token
-  	@log.info("Get marathon login auth token")  	
-  	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
-    req.body = {"uid":@options.marathonCredentials[0],"password":@options.marathonCredentials[0]}
-    res = Net::HTTP.new(@options.auth_login,@options.auth_login).start{|http| http.request(req)}  
-    JSON.parse(res.body)['token']                                                       
-  	
   end
  
   def run

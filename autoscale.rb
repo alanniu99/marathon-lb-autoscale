@@ -108,6 +108,11 @@ class Optparser
               "#{options.min_instances})") do |value|
         options.min_instances = value
       end
+     
+     opts.on("--auth-login", URI,"DCOS auth login access API url") do |value|
+        options.auth_login = value
+     end
+     
 
       opts.separator ""
       opts.separator "Common options:"
@@ -127,6 +132,7 @@ end
 class Autoscale
   def initialize(options)
     @options = options
+    @token_mara = get_token
     @log = Logger.new(STDOUT)
     @log.level = Logger::INFO
     @log.formatter = proc do |severity, datetime, progname, msg|
@@ -138,7 +144,16 @@ class Autoscale
       end
     end
   end
-
+ 
+  def get_token
+  	@log.info("Get marathon login auth token")  	
+  	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
+    req.body = {"uid":@options.marathonCredentials[0],"password":@options.marathonCredentials[0]}
+    res = Net::HTTP.new(@options.auth_login,@options.auth_login).start{|http| http.request(req)}  
+    JSON.parse(res.body)['token']                                                       
+  	
+  end
+ 
   def run
     @log.info('Starting autoscale controller')
     @log.info("Options: #{@options.to_s}")
@@ -271,7 +286,8 @@ class Autoscale
   def update_current_marathon_instances
     req = Net::HTTP::Get.new('/v2/apps')
     if !@options.marathonCredentials.empty?
-      req.basic_auth @options.marathonCredentials[0], @options.marathonCredentials[1]
+     # req.basic_auth @options.marathonCredentials[0], @options.marathonCredentials[1]
+     req['Authorization'] = 'token=#{@token_mara}' 
     end
 
     res = Net::HTTP.start(@options.marathon.host,
@@ -282,8 +298,7 @@ class Autoscale
 
     instances = {}
     apps['apps'].each do |app|
-      //id = app['id'][1..-1].gsub '/', '_' # trim leading '/'  # gsub add support for folders
-      id = app['id'][1..-1]
+      id = app['id'][1..-1].gsub '/', '_' # trim leading '/'  # gsub add support for folders    
       instances[id] = app['instances']
     end
     # Find our app backends
@@ -355,8 +370,9 @@ class Autoscale
     scale_list.each do |app,instances|
       req = Net::HTTP::Put.new('/v2/apps/' + app)
       if !@options.marathonCredentials.empty?
-        req.basic_auth(@options.marathonCredentials[0],
-                       @options.marathonCredentials[1])
+        #req.basic_auth(@options.marathonCredentials[0],
+        #              @options.marathonCredentials[1])
+         req['Authorization'] = "token=#{@token_mara}" 
       end
       req.content_type = 'application/json'
       req.body = JSON.generate({'instances'=>instances})
@@ -367,6 +383,7 @@ class Autoscale
       end
     end
   end
+ 
 end
 
 options = Optparser.parse(ARGV)

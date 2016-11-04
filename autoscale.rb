@@ -10,6 +10,7 @@ require 'net/http'
 require 'set'
 require 'json'
 require 'resolv'
+require 'openssl'
 
 class Integer
   N_BYTES = [42].pack('i').size
@@ -150,7 +151,11 @@ class Autoscale
   	jsonPW = { "uid": "#@options.marathonCredentials[0]" , "password": "#@options.marathonCredentials[1]" } 	
   	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
     req.body = jsonPW.to_json
-    res = Net::HTTP.new(@options.auth_login.host,@options.auth_login.port).start{|http| http.request(req)}  
+    res = Net::HTTP.new(@options.auth_login.host,@options.auth_login.port).start do |http|
+     http.use_ssl = true
+     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+     http.request(req)
+     end
     @token_mara = JSON.parse(res.body)['token']                                                       
   	
    end
@@ -293,6 +298,8 @@ class Autoscale
 
     res = Net::HTTP.start(@options.marathon.host,
                           @options.marathon.port) {|http|
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE                   	
       http.request(req)
     }
     apps = JSON.parse(res.body)
@@ -380,6 +387,8 @@ class Autoscale
 
       Net::HTTP.new(@options.marathon.host,
                     @options.marathon.port).start do |http|
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         http.request(req)
       end
     end

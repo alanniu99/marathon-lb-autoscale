@@ -295,7 +295,7 @@ class Autoscale
   def update_current_marathon_instances
     req = Net::HTTP::Get.new('/v2/apps')
     if !@options.marathonCredentials.empty?
-     req['Authorization'] = "token=#{@token_mara}" 
+      req['authorization'] = "Token token=#{@token_mara}"  
     end
 
     res = Net::HTTP.start(@options.marathon.host,
@@ -378,7 +378,7 @@ class Autoscale
     scale_list.each do |app,instances|
       req = Net::HTTP::Put.new('/v2/apps/' + app)
       if !@options.marathonCredentials.empty?
-        req['Authorization'] = "token=#{@token_mara}" 
+        req['authorization'] = "Token token=#{@token_mara}" 
       end
       req.content_type = 'application/json'
       req.body = JSON.generate({'instances'=>instances})

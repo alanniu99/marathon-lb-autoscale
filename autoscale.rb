@@ -7,6 +7,7 @@ require 'ostruct'
 require 'pp'
 require 'logger'
 require 'net/http'
+require 'net/https'
 require 'set'
 require 'json'
 require 'resolv'
@@ -134,7 +135,7 @@ class Autoscale
  
   def initialize(options)
     @options = options
-    @token_mara = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1aWQiOiJhZG1pbiIsImV4cCI6MTQ3ODY4NDQwOH0.VBi266oFwFBbUVghrrkwYxrYCEmVzNNtgYb9YrVDjHaZjyGwLOPA7ZUaQ6iTqnJFpLZy8MH6KN1ZmkZJSLBaCh2RI5fnJmELMQoDfroEEyII-Oujl4BLVybBJXm3K_hI2nblwm8RibwB7FawtSCxXAM-ClwJJAm_DG0TqCeSscmzo1f9IXoWht8e5yo_UawCQsV1_JIyooVMu8cx7lsR8IkFXhrLpTJ_XATZV-PV86hUXnxhuhLJs7lePZfLnX6evoPngOtwtPTGQfatLp6FIahCT55IdQ52Ur8s857ERUdaun2CEnh6S54wz7sc9P7tOwX9KBFCWygK1fnZnppOvg"                                                     
+    # @token_mara = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1aWQiOiJhZG1pbiIsImV4cCI6MTQ3ODY4NDQwOH0.VBi266oFwFBbUVghrrkwYxrYCEmVzNNtgYb9YrVDjHaZjyGwLOPA7ZUaQ6iTqnJFpLZy8MH6KN1ZmkZJSLBaCh2RI5fnJmELMQoDfroEEyII-Oujl4BLVybBJXm3K_hI2nblwm8RibwB7FawtSCxXAM-ClwJJAm_DG0TqCeSscmzo1f9IXoWht8e5yo_UawCQsV1_JIyooVMu8cx7lsR8IkFXhrLpTJ_XATZV-PV86hUXnxhuhLJs7lePZfLnX6evoPngOtwtPTGQfatLp6FIahCT55IdQ52Ur8s857ERUdaun2CEnh6S54wz7sc9P7tOwX9KBFCWygK1fnZnppOvg"                                                     
     @log = Logger.new(STDOUT)
     @log.level = Logger::INFO
     @log.formatter = proc do |severity, datetime, progname, msg|
@@ -149,24 +150,22 @@ class Autoscale
   
    def get_token
   	@log.info("Get marathon login auth token")
-  	@log.info(@options.auth_login.path)
-  	jsonPW = { "uid": "#@options.marathonCredentials[0]" , "password": "#@options.marathonCredentials[1]" } 	
-  	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
-    req.body = jsonPW.to_json
-    http = Net::HTTP.new(@options.auth_login.host,@options.auth_login.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE   
-    res = http.request(req)
-    @log.info(res)
-    #@token_mara = JSON.parse(res.body)['token']  
-    @token_mara = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1aWQiOiJhZG1pbiIsImV4cCI6MTQ3ODY4NDQwOH0.VBi266oFwFBbUVghrrkwYxrYCEmVzNNtgYb9YrVDjHaZjyGwLOPA7ZUaQ6iTqnJFpLZy8MH6KN1ZmkZJSLBaCh2RI5fnJmELMQoDfroEEyII-Oujl4BLVybBJXm3K_hI2nblwm8RibwB7FawtSCxXAM-ClwJJAm_DG0TqCeSscmzo1f9IXoWht8e5yo_UawCQsV1_JIyooVMu8cx7lsR8IkFXhrLpTJ_XATZV-PV86hUXnxhuhLJs7lePZfLnX6evoPngOtwtPTGQfatLp6FIahCT55IdQ52Ur8s857ERUdaun2CEnh6S54wz7sc9P7tOwX9KBFCWygK1fnZnppOvg"                                                     
   	
+  	jsonPW = { "uid" => "#{@options.marathonCredentials[0]}" , "password" => "#{@options.marathonCredentials[1]}" }.to_json
+   
+	https = Net::HTTP.new(@options.auth_login.host,@options.auth_login.port)
+  	req = Net::HTTP::Post.new(@options.auth_login.path,{'Content-Type' => 'application/json'})  
+    req.body = "#{jsonPW}" 
+    https.use_ssl = true
+    https.verify_mode = OpenSSL::SSL::VERIFY_NONE   
+    res = https.request(req)  
+	@log.info("Response #{res.code} #{res.message}: #{res.body}")
+    @token_mara = JSON.parse(res.body)['token']      
    end
  
   def run
     @log.info('Starting autoscale controller')
     @log.info("Options: #{@options.to_s}")
-    @log.info("token: #{@token_mara}")
     @samples = 0
 
     @apps = {}
@@ -294,7 +293,6 @@ class Autoscale
   end
 
   def update_current_marathon_instances
-  	@log.info("update current marathon instances")
     req = Net::HTTP::Get.new('/v2/apps')
     if !@options.marathonCredentials.empty?
       req['authorization'] = "Token token=#{@token_mara}"  
@@ -377,7 +375,6 @@ class Autoscale
   end
 
  def scale_apps(scale_list)
- 	@log.info("scale apps")
     scale_list.each do |app,instances|
       req = Net::HTTP::Put.new('/v2/apps/' + app)
       if !@options.marathonCredentials.empty?
@@ -396,5 +393,5 @@ end
 
 options = Optparser.parse(ARGV)
 autoscale = Autoscale.new(options)
-#autoscale.get_token
+autoscale.get_token
 autoscale.run
